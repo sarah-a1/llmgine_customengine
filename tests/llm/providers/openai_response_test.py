@@ -26,7 +26,7 @@ import pytest
 import os
 import json
 from openai.types.chat import ChatCompletion
-from llmgine.llm.providers.openai_provider import OpenAIProvider
+from llmgine.llm.providers.openai import OpenAIProvider
 from tests.llm.providers.utils import (
     get_saved_response,
     save_response_chat_completion,

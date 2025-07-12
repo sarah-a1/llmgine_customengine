@@ -25,11 +25,11 @@ class Command:
     command_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     metadata: Dict[str, Any] = field(default_factory=dict)
-    session_id: Optional[SessionID] = None
-
+    session_id: SessionID = field(default_factory=lambda: SessionID("ROOT"))
+    
     def __post_init__(self) -> None:
-        if self.session_id is None:  # TODO  can't this be removed? and use default arg
-            self.session_id = SessionID("ROOT")
+        pass
+
 
 
 @dataclass
@@ -42,7 +42,7 @@ class CommandResult:
     result: Optional[Any] = None
     error: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    session_id: Optional[SessionID] = None
+    session_id: SessionID = field(default_factory=lambda: SessionID("ROOT"))
 
     def __post_init__(self) -> None:
         # Add metadata about where this command was handled

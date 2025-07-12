@@ -1,9 +1,8 @@
 import uuid
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
-from prompt_toolkit import Application
 
 from llmgine.bus.bus import MessageBus
 from llmgine.llm.providers import LLMProvider
@@ -11,7 +10,7 @@ from llmgine.llm.providers.events import LLMCallEvent, LLMResponseEvent
 from llmgine.llm.providers.providers import Providers
 from llmgine.llm.providers.response import LLMResponse, ResponseTokens
 from llmgine.llm.tools.toolCall import ToolCall
-from llmgine.llm import ToolChoiceOrDictType
+from llmgine.llm import ModelFormattedDictTool, SessionID, ToolChoiceOrDictType
 
 OpenRouterProviders = Literal[
     "OpenAI",
@@ -89,12 +88,15 @@ class OpenRouterResponse(LLMResponse):
 
     @property
     def content(self) -> str:
-        return self.response.choices[0].message.content
+        # TODO: Implement content
+        return ""
 
     @property
     def tool_calls(self) -> List[ToolCall]:
+        if not self.response.choices[0].message.tool_calls:
+            return []
         return [
-            ToolCall(tool_call)
+            ToolCall(tool_call.id, tool_call.function.name, tool_call.function.arguments)
             for tool_call in self.response.choices[0].message.tool_calls
         ]
 
@@ -108,15 +110,13 @@ class OpenRouterResponse(LLMResponse):
 
     @property
     def tokens(self) -> ResponseTokens:
-        return ResponseTokens(
-            prompt_tokens=self.response.usage.prompt_tokens,
-            completion_tokens=self.response.usage.completion_tokens,
-            total_tokens=self.response.usage.total_tokens,
-        )
+        # TODO: Implement tokens
+        return ResponseTokens()
 
     @property
     def reasoning(self) -> str:
-        return self.response.choices[0].message.reasoning
+        # TODO: Implement reasoning
+        return ""
 
 
 class OpenRouterProvider(LLMProvider):
@@ -128,7 +128,7 @@ class OpenRouterProvider(LLMProvider):
         model_component_id: Optional[str] = None,
     ) -> None:
         self.model = model
-        self.model_component_id = model_component_id
+        self.model_component_id = model_component_id or ""
         self.provider = provider
         self.base_url = "https://openrouter.ai/api/v1"
         self.client = AsyncOpenAI(api_key=api_key, base_url=self.base_url)
@@ -136,24 +136,24 @@ class OpenRouterProvider(LLMProvider):
 
     async def generate(
         self,
-        messages: List[Dict],
-        tools: Optional[List[Dict]] = None,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[ModelFormattedDictTool]] = None,
         tool_choice: ToolChoiceOrDictType = "auto",
-        temperature: float = 0.7,
+        parallel_tool_calls: Optional[bool] = None,
+        temperature: Optional[float] = 0.7,
         max_completion_tokens: int = 5068,
-        response_format: Optional[Dict] = None,
+        response_format: Optional[Dict[str, Any]] = None,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
         reasoning: bool = False,
         reasoning_max_tokens: Optional[int] = None,
-        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
         reasoning_include_reasoning: Optional[bool] = False,
         retry_count: int = 5,
-        test: bool = False,
         **kwargs: Any,
     ) -> LLMResponse:
         call_id = str(uuid.uuid4())
 
         # Default payload
-        payload = {
+        payload : Dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "max_completion_tokens": max_completion_tokens,
@@ -211,7 +211,8 @@ class OpenRouterProvider(LLMProvider):
         await self.bus.publish(call_event)
         for _ in range(retry_count):
             try:
-                response = await self.client.chat.completions.create(**payload)
+                response : ChatCompletion = await self.client.chat.completions.create(**payload) # type: ignore
+                assert isinstance(response, ChatCompletion), "Response is not a ChatCompletion"
                 await self.bus.publish(
                     LLMResponseEvent(
                         call_id=call_id,
@@ -226,14 +227,10 @@ class OpenRouterProvider(LLMProvider):
                         error=e,
                     )
                 )
-        if test:
-            # Return raw response
-            return response
-        else:
-            # Return wrapped response
-            return OpenRouterResponse(response)
+        # Return wrapped response
+        return OpenRouterResponse(response)
 
-    def stream() -> None:
+    def stream(self) -> None:
         # TODO: Implement streaming
         raise NotImplementedError("Streaming is not supported for OpenRouter")
 
@@ -257,10 +254,10 @@ async def main():
 
     app = ApplicationBootstrap(ApplicationConfig(enable_console_handler=False))
     await app.bootstrap()
-    tool_manager = ToolManager(session_id="test", engine_id="test")
+    tool_manager = ToolManager(session_id=SessionID("test"), engine_id="test")
     await tool_manager.register_tool(get_weather)
     provider = OpenRouterProvider(
-        api_key=os.getenv("OPENROUTER_API_KEY"),
+        api_key=os.getenv("OPENROUTER_API_KEY") or "",
         model="deepseek/deepseek-chat-v3-0324",
         provider="Fireworks",
     )
@@ -268,7 +265,6 @@ async def main():
     response = await provider.generate(
         messages=[{"role": "user", "content": "Whats the weather in Tokyo?"}],
         tools=tools,
-        test=True,
     )
     print(response)
 

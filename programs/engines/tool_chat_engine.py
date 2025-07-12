@@ -220,18 +220,17 @@ class ToolChatEngine:
 
 async def main():
     import os
-    import sys
-
-    # Add the project root to Python path so we can import from tools
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
 
     print(f"Current working directory: {os.getcwd()}")
+
     from tools.test_tools import get_weather
     from llmgine.ui.cli.components import ToolComponent
+    from llmgine.bootstrap import ApplicationBootstrap, ApplicationConfig
 
-    await MessageBus().start()
+    config = ApplicationConfig(enable_console_handler=False)
+    bootstrap = ApplicationBootstrap(config)
+    await bootstrap.bootstrap()
+
     cli = EngineCLI(SessionID("test"))
     engine = ToolChatEngine(session_id=SessionID("test"))
     await engine.register_tool(get_weather)

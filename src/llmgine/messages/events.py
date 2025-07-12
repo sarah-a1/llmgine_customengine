@@ -26,13 +26,9 @@ class Event:
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     metadata: Dict[str, Any] = field(default_factory=dict)
-    session_id: Optional[SessionID] = None
+    session_id: SessionID = field(default_factory=lambda: SessionID("ROOT"))
 
     def __post_init__(self) -> None:
-        # Set the session id to GLOBAL if it is not set
-        if self.session_id is None:
-            self.session_id = SessionID("ROOT")
-
         # Add metadata about where this event was created
         tmp: Optional[Any] = inspect.currentframe()
         assert tmp is not None
@@ -85,36 +81,3 @@ class CommandResultEvent(Event):
     """Event emitted when a command result is created."""
 
     command_result: Optional[CommandResult] = None
-
-@dataclass
-class ScheduledEvent(Event):
-    """Base class for all scheduled events.
-    
-    Scheduled events are placed in the message bus and are processed
-    at a specific time.
-    Scheduled time must be provided. 
-    If not, the event will be treated as a regular event.
-    """
-    scheduled_time: datetime = field(default_factory=lambda: datetime.now())
-
-    @override
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the event to a dictionary.
-        """
-        return {
-            "event_id": self.event_id,
-            "timestamp": self.timestamp,
-            "metadata": self.metadata,
-            "session_id": self.session_id,
-            "scheduled_time": self.scheduled_time.isoformat()
-        }
-    
-    @classmethod
-    def from_dict(cls, event_dict: Dict[str, Any]) -> "ScheduledEvent":
-        """
-        Create a ScheduledEvent from a dictionary.
-        """
-        if "scheduled_time" in event_dict:
-            event_dict["scheduled_time"] = datetime.fromisoformat(event_dict["scheduled_time"])
-        return cls(**event_dict)

@@ -3,7 +3,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from llmgine.llm.tools.toolCall import ToolCall
 
@@ -14,19 +14,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ResponseTokens:
     # TODO: better structure, cost calculation, etc
-    prompt_tokens: int
-    reasoning_tokens: int
-    completion_tokens: int
-    total_tokens: int
+    prompt_tokens: Optional[int] = None
+    reasoning_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
 
 
 @dataclass
 class ResponseMetrics:
     # TODO: better structure, cost calculation, etc
-    tokens: ResponseTokens
-    cost: float
-    ttf: float
-    tps: float
+    tokens: Optional[ResponseTokens] = None
+    cost: Optional[float] = None
+    ttf: Optional[float] = None
+    tps: Optional[float] = None
 
 
 # Base class for LLM responses

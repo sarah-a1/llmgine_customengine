@@ -6,12 +6,11 @@ as well as concrete implementations.
 
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Literal, Optional, Protocol
 
 from llmgine.llm import (
-    ContextType,
     ModelFormattedDictTool,
-    ModelNameStr,
+    ToolChoiceOrDictType,
 )
 from llmgine.llm.providers.response import LLMResponse
 from llmgine.llm.tools import ToolCall
@@ -23,13 +22,15 @@ class LLMProvider(Protocol):
     @abstractmethod
     async def generate(
         self,
-        prompt: str,
-        context: Optional[ContextType] = None,
-        system_prompt: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
-        model: Optional[ModelNameStr] = None,
+        messages: List[Dict[str, Any]],
         tools: Optional[List[ModelFormattedDictTool]] = None,
+        tool_choice: ToolChoiceOrDictType = "auto",
+        parallel_tool_calls: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: int = 5068,
+        response_format: Optional[Dict[str, Any]] = None,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate a response from the LLM.
 
@@ -55,14 +56,15 @@ class LLMManager(ABC):
     @abstractmethod
     async def generate(
         self,
-        prompt: str,
+        messages: List[Dict[str, Any]],
         provider_id: Optional[str] = None,
-        context: Optional[ContextType] = None,
-        system_prompt: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
-        model: Optional[ModelNameStr] = None,
         tools: Optional[List[ModelFormattedDictTool]] = None,
+        tool_choice: ToolChoiceOrDictType = "auto",
+        temperature: Optional[float] = None,
+        max_completion_tokens: int = 5068,
+        response_format: Optional[Dict[str, Any]] = None,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate a response from an LLM provider.
 
@@ -134,14 +136,15 @@ class DefaultLLMManager(LLMManager):
 
     async def generate(
         self,
-        prompt: str,
+        messages: List[Dict[str, Any]],
         provider_id: Optional[str] = None,
-        context: Optional[ContextType] = None,
-        system_prompt: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
-        model: Optional[ModelNameStr] = None,
         tools: Optional[List[ModelFormattedDictTool]] = None,
+        tool_choice: ToolChoiceOrDictType = "auto",
+        temperature: Optional[float] = None,
+        max_completion_tokens: int = 5068,
+        response_format: Optional[Dict[str, Any]] = None,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate a response from an LLM provider.
 
@@ -165,13 +168,14 @@ class DefaultLLMManager(LLMManager):
         provider = self.get_provider(provider_id)
 
         return await provider.generate(
-            prompt=prompt,
-            context=context,
-            system_prompt=system_prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            model=model,
+            messages=messages,
             tools=tools,
+            tool_choice=tool_choice,
+            temperature=temperature,
+            max_completion_tokens=max_completion_tokens,
+            response_format=response_format,
+            reasoning_effort=reasoning_effort,
+            **kwargs,
         )
 
     def register_provider(self, provider_id: str, provider: LLMProvider) -> None:
@@ -241,12 +245,14 @@ def create_tool_call(name: str, arguments: Dict[str, Any]) -> ToolCall:
 
 
 # Import specific provider implementations
-from llmgine.llm.providers.dummy import DummyProvider
-from llmgine.llm.providers.openai_provider import OpenAIProvider
+from llmgine.llm.providers.openai import OpenAIProvider
+from llmgine.llm.providers.anthropic import AnthropicProvider
+from llmgine.llm.providers.openrouter import OpenRouterProvider
 from llmgine.llm.providers.providers import Providers
 
 __all__ = [
-    "DummyProvider",
     "OpenAIProvider",
+    "AnthropicProvider",
+    "OpenRouterProvider",
     "Providers",
 ]

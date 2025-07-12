@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 import sys
 from llmgine.bus.bus import MessageBus, bus_exception_hook
-from llmgine.messages.events import ScheduledEvent, Event
+from llmgine.messages import ScheduledEvent, Event
 
 # Handler that prints when called, accepts base Event type
 def scheduled_event_handler(event: Event):
@@ -116,4 +116,4 @@ async def test_scheduled_events_with_kill():
     sys.exit(1)
 
 if __name__ == "__main__":
-    asyncio.run(test_scheduled_events_with_exception())
+    asyncio.run(test_scheduled_events_with_kill())

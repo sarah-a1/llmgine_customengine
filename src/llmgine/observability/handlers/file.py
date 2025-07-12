@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import time
 from typing import Any, Dict, Optional
 from enum import Enum
 from dataclasses import asdict
@@ -63,12 +64,12 @@ class FileEventHandler(ObservabilityEventHandler):
         """Convert an event (dataclass or object) to a dictionary for serialization.
         Handles nested objects, dataclasses, and Enums.
         """
-        if hasattr(event, "to_dict") and callable(event.to_dict):
-            try:
-                return event.to_dict()
-            except Exception:
-                logger.warning(f"Error calling to_dict on {type(event)}", exc_info=True)
-                # Fall through
+        # if hasattr(event, "to_dict") and callable(event.to_dict):
+        #     try:
+        #         return event.to_dict()
+        #     except Exception:
+        #         logger.warning(f"Error calling to_dict on {type(event)}", exc_info=True)
+        #         # Fall through
 
         try:
             # Use dataclasses.asdict with a factory to handle nested conversion

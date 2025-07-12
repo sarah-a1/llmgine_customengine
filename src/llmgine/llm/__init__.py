@@ -15,8 +15,14 @@ ContextType = NewType("ContextType", List[Dict[str, Any]])
 
 ModelNameStr = NewType("ModelNameStr", str)
 
-
+# TODO There is not way this is the right place to put this>
 SessionID = NewType("SessionID", str)
 
-ToolChoiceType = Literal["auto", "none", "required"]  # TODO an enum would be better, otherwise "none" will have lots of search collisions
-ToolChoiceOrDictType = Union[ToolChoiceType, Dict[str, Any]] # TODO this Dict[str, Any] might be ModelFormattedDictTool? # TODO could rename
+LLMConversation = NewType("LLMConversation", List[Dict[str, Any]])
+
+ToolChoiceType = Literal[
+    "auto", "none", "required"
+]  # TODO an enum would be better, otherwise "none" will have lots of search collisions
+ToolChoiceOrDictType = Union[
+    ToolChoiceType, Dict[str, Any]
+]  # TODO this Dict[str, Any] might be ModelFormattedDictTool? # TODO could rename

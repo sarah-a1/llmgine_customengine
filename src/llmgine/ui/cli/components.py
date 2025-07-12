@@ -213,7 +213,6 @@ class UserGeneralInput(CLIPrompt):
                 HTML("  ❯ "),
                 multiline=True,
                 prompt_continuation="  ❯ ",
-                vi_mode=CLIConfig().vi_mode,
             )
             if self.cli is not None:
                 if self.cli.process_cli_cmds(user_input):

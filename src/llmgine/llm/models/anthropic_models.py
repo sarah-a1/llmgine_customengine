@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional, Literal, Union, Any
 from llmgine.bootstrap import ApplicationConfig
 from llmgine.llm.models.model import Model
-from llmgine.llm.providers.anthropic_provider import AnthropicProvider, AnthropicResponse
+from llmgine.llm.providers.anthropic import AnthropicProvider, AnthropicResponse
 from llmgine.llm.providers import Providers
 from llmgine.llm.providers.providers import Provider
 from llmgine.llm.providers.response import LLMResponse

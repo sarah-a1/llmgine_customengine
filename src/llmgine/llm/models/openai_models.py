@@ -23,7 +23,7 @@ import os
 import dotenv
 from typing import List, Dict, Optional, Literal, Union, Any
 from llmgine.llm.models.model import Model
-from llmgine.llm.providers.openai_provider import OpenAIResponse, OpenAIProvider
+from llmgine.llm.providers.openai import OpenAIResponse, OpenAIProvider
 from llmgine.llm.providers.openrouter import OpenRouterProvider
 from llmgine.llm.providers import Providers
 from llmgine.llm.tools.tool_parser import ModelFormattedDictTool

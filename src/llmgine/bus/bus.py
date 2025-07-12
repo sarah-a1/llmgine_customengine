@@ -4,7 +4,6 @@ The message bus is the central communication mechanism in the application,
 providing a way for components to communicate without direct dependencies.
 """
 
-import json
 import os
 import sys
 import asyncio
@@ -29,15 +28,17 @@ from typing import (
 from llmgine.bus.session import BusSession
 from llmgine.bus.utils import is_async_function
 from llmgine.llm import SessionID
+from llmgine.messages.approvals import ApprovalCommand, execute_approval_command
 from llmgine.messages.commands import Command, CommandResult
 from llmgine.messages.events import (
     CommandResultEvent,
     CommandStartedEvent,
     Event,
     EventHandlerFailedEvent,
-    ScheduledEvent,
 )
+from llmgine.messages.scheduled_events import ScheduledEvent
 from llmgine.observability.handlers.base import ObservabilityEventHandler
+from llmgine.database.database import get_and_delete_unfinished_events, save_unfinished_events
 
 # Get the base logger and wrap it with the adapter
 logger = logging.getLogger(__name__)
@@ -50,15 +51,14 @@ span: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("span", def
 
 # Type variables for command and event handlers
 CommandType = TypeVar("CommandType", bound=Command)
-EventType = TypeVar("EventType", bound=Event)
 CommandHandler = Callable[[Command], CommandResult]
 AsyncCommandHandler = Callable[[Command], Awaitable[CommandResult]]
+EventType = TypeVar("EventType", bound=Event)
 EventHandler = Callable[[Event], None]
 AsyncEventHandler = Callable[[Event], Awaitable[None]]
 
 
 # Combined types
-
 AsyncOrSyncCommandHandler = Union[AsyncCommandHandler, CommandHandler]
 
 
@@ -233,9 +233,6 @@ class MessageBus:
             event_type: The type of event to handle.
             handler: The handler function/coroutine.
         """
-        session_id = session_id or SessionID(
-            "ROOT"
-        )  # TODO is this needed? with default arg?
 
         if session_id not in self._event_handlers:
             self._event_handlers[SessionID(session_id)] = {}
@@ -328,8 +325,6 @@ class MessageBus:
             ValueError: If no handler is registered for the command type.
         """
         command_type = type(command)
-        if command.session_id is None:
-            raise ValueError("Command has no session ID")
 
         handler = None
         if command.session_id in self._command_handlers:
@@ -353,7 +348,11 @@ class MessageBus:
             await self.publish(
                 CommandStartedEvent(command=command, session_id=command.session_id)
             )
-            result: CommandResult = await handler(command)
+            if isinstance(command, ApprovalCommand):
+                result: CommandResult = await execute_approval_command(command, handler)
+            else:
+                result: CommandResult = await handler(command)
+            
             logger.info(f"Command {command_type.__name__} executed successfully")
             await self.publish(
                 CommandResultEvent(command_result=result, session_id=command.session_id)
@@ -560,11 +559,13 @@ class MessageBus:
         """
         if self._event_queue is None:
             return
-        with open(os.path.join(self.data_dir, "unfinished_events.jsonl"), "w") as f:
-            while not self._event_queue.empty():
-                event = await self._event_queue.get() # type: ignore
-                json.dump(event.to_dict(), f)
-                f.write('\n')  # Add newline after each JSON object
+        
+        events : List[ScheduledEvent] = []
+        while not self._event_queue.empty():
+            event = await self._event_queue.get() # type: ignore
+            if isinstance(event, ScheduledEvent):
+                events.append(event)
+        save_unfinished_events(events)
 
     async def _load_queue(self) -> None:
         """
@@ -572,19 +573,9 @@ class MessageBus:
         """
         if self._event_queue is None:
             return
-        
-        with open(os.path.join(self.data_dir, "unfinished_events.jsonl"), "r") as f:
-            for line in f:
-                event_dict = json.loads(line)
-                if "scheduled_time" in event_dict:
-                    event = ScheduledEvent.from_dict(event_dict)
-                else:
-                    event = Event.from_dict(event_dict)
-                await self._event_queue.put(event) # type: ignore
-
-        # Clear the file
-        with open(os.path.join(self.data_dir, "unfinished_events.jsonl"), "w") as f:
-            f.write("")
+        events : List[ScheduledEvent] = get_and_delete_unfinished_events()
+        for event in events:
+            await self._event_queue.put(event) # type: ignore
 
 def bus_exception_hook(bus: MessageBus) -> None:
     """
