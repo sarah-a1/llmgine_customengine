@@ -98,7 +98,6 @@ class Gpt41:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=None,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -128,7 +127,6 @@ class Gpt41:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse)
@@ -188,7 +186,6 @@ class Gpt41Mini:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=None,
-            test=test,
             **kwargs,
         )
         # assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -218,7 +215,6 @@ class Gpt41Mini:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -276,7 +272,6 @@ class Gpt_4o_Mini_Latest:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -306,7 +301,6 @@ class Gpt_4o_Mini_Latest:
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -364,7 +358,6 @@ class Gpt_o3_Mini(Model):
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"
@@ -393,7 +386,6 @@ class Gpt_o3_Mini(Model):
             max_completion_tokens=max_completion_tokens,
             response_format=response_format,
             reasoning_effort=reasoning_effort,
-            test=test,
             **kwargs,
         )
         assert isinstance(tmp, OpenAIResponse), "tmp is not an OpenAIResponse"

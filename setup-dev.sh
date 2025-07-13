@@ -5,9 +5,9 @@ set -e
 
 echo "🚀 Setting up LLMgine development environment..."
 
-# Check if Python 3.11+ is available
+# Check if Python 3.12+ is available
 python_version=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
-min_version="3.11"
+min_version="3.12"
 
 if [ "$(printf '%s\n' "$min_version" "$python_version" | sort -V | head -n1)" != "$min_version" ]; then
     echo "❌ Python 3.11+ is required. Current version: $python_version"
